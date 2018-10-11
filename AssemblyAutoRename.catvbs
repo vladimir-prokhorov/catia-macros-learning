@@ -1,0 +1,78 @@
+'===========================================================================
+'	Переименовывание файлов в дереве.
+'===========================================================================
+'	Замеченные недоработки:
+'	1. 	Не делает различия между деталью и сборкой и нумерует все подряд.
+'	2. 	Работает только на верхнем уровне и не умеет заходить в подсборки.
+'	3. 	Некорректно обрабатывается случай, когда деталь встречается в дереве
+'		больше одного раза.
+'===========================================================================
+'	Запланированные доработки:
+'===========================================================================
+'	1.	После внесения изменений нужно подсборки и все входящие детали
+'		сохранить под новым именем, в исходной папке.
+'	2.	Подвязать чертеж к новому файлу модели в автоматическом режиме.
+'===========================================================================
+
+Language = "VBSCRIPT"
+
+Sub CATMain()
+
+Set mainDocument = CATIA.ActiveDocument
+Set rootAssembly = mainDocument.Product
+Set productList = rootAssembly.Products
+
+num = InputBox("Enter number", "title", "5752")
+print rootAssembly, num, 0, 0, "Product"
+
+'Set parameters1 = rootAssembly.UserRefProperties
+'Set boolParam1 = parameters1.CreateBoolean("isChecked", true)
+
+'mainDocument.SaveAs _
+'		mainDocument.Path & "\" & rootAssembly.PartNumber & " " & _
+'		rootAssembly.Definition & " " & rootAssembly.Revision & ".CATPart"
+
+asm = 1
+prt = 1
+sbp = 1
+
+for i = 1 to productList.Count
+	if (productList.Item(i).Revision <> "ANY") then
+		if (InStr(productList.Item(i).Name, "Product")) then
+			print productList.Item(i), num, asm, 0, "Product"
+			asm = asm + 1
+			Set subProducts = productList.Item(i).Products
+			sbp = 1
+			for j = 1 to subProducts.Count
+				print subProducts.Item(j), num, i, sbp, "Part"
+				sbp = sbp + 1
+			next
+		else 
+			print productList.Item(i), num, 0, prt, "Part"
+			prt = prt + 1
+		end if
+	end if
+next
+
+End Sub
+
+Sub print(document, num, asm, prt, dfn)
+	document.PartNumber = "ZP " & num & " " & _
+							String(2 - Len(asm), "0") & asm & _
+							String(2 - Len(prt), "0") & prt
+	document.Definition = dfn
+	document.Revision = getDate()
+	'MsgBox TypeName(document)
+End Sub
+
+Function getDate()
+	SetLocale "en-us"
+	Dim currDay, currMonth, currYear, mark
+
+	currDay = Day(Date)
+	currMonth = Month(Date)
+	currYear = Year(Date) Mod 100
+
+	getDate = String(2 - Len(currDay), "0") & currDay & "." & _
+			  MonthName(currMonth,true) & "." & currYear
+End Function
