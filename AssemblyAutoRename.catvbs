@@ -1,78 +1,73 @@
 '===========================================================================
-'	Переименовывание файлов в дереве.
+' Переименовывание файлов в дереве.
 '===========================================================================
-'	Замеченные недоработки:
-'	1. 	Не делает различия между деталью и сборкой и нумерует все подряд.
-'	2. 	Работает только на верхнем уровне и не умеет заходить в подсборки.
-'	3. 	Некорректно обрабатывается случай, когда деталь встречается в дереве
-'		больше одного раза.
+' Замеченные недостатки:
+' 1.  Неверно обрабатывает случай с многоуровневой вложенностью.
 '===========================================================================
-'	Запланированные доработки:
+' Запланированные доработки:
 '===========================================================================
-'	1.	После внесения изменений нужно подсборки и все входящие детали
-'		сохранить под новым именем, в исходной папке.
-'	2.	Подвязать чертеж к новому файлу модели в автоматическом режиме.
+' 1.  После внесения изменений нужно подсборки и все входящие детали
+'   сохранить под новым именем, в исходной папке.
+' 2.  Подвязать чертеж к новому файлу модели в автоматическом режиме.
 '===========================================================================
 
 Language = "VBSCRIPT"
-
 Sub CATMain()
-
 Set mainDocument = CATIA.ActiveDocument
 Set rootAssembly = mainDocument.Product
-Set productList = rootAssembly.Products
-
-num = InputBox("Enter number", "title", "5752")
-print rootAssembly, num, 0, 0, "Product"
-
-'Set parameters1 = rootAssembly.UserRefProperties
-'Set boolParam1 = parameters1.CreateBoolean("isChecked", true)
-
-'mainDocument.SaveAs _
-'		mainDocument.Path & "\" & rootAssembly.PartNumber & " " & _
-'		rootAssembly.Definition & " " & rootAssembly.Revision & ".CATPart"
-
-asm = 1
-prt = 1
-sbp = 1
-
-for i = 1 to productList.Count
-	if (productList.Item(i).Revision <> "ANY") then
-		if (InStr(productList.Item(i).Name, "Product")) then
-			print productList.Item(i), num, asm, 0, "Product"
-			asm = asm + 1
-			Set subProducts = productList.Item(i).Products
-			sbp = 1
-			for j = 1 to subProducts.Count
-				print subProducts.Item(j), num, i, sbp, "Part"
-				sbp = sbp + 1
-			next
-		else 
-			print productList.Item(i), num, 0, prt, "Part"
-			prt = prt + 1
-		end if
-	end if
-next
-
+sTmpPath = CATIA.ActiveDocument.Path
+clrProp rootAssembly
+setProp rootAssembly, 0, sTmpPath
+clrProp rootAssembly
 End Sub
 
-Sub print(document, num, asm, prt, dfn)
-	document.PartNumber = "ZP " & num & " " & _
-							String(2 - Len(asm), "0") & asm & _
-							String(2 - Len(prt), "0") & prt
-	document.Definition = dfn
+Sub setProp(thisProduct, thisAsm, sTmpPath)
+	Dim currAsm, currPrt
+	currAsm = thisAsm
+	currPrt = 0
+	Set productList = thisProduct.Products
+	setData thisProduct, currAsm, 0, "CATProduct", sTmpPath
+	For i = 1 To productList.Count
+		If (productList.Item(i).DescriptionRef <> "True" And _
+				productList.Item(i).Revision <> "ANY") Then
+			If (productList.Item(i).Products.Count > 0) Then
+				currAsm = currAsm + 1
+				setProp productList.Item(i), currAsm, sTmpPath
+			Else
+				currPrt = currPrt + 1
+				setData productList.Item(i), thisAsm, currPrt, "CATPart", sTmpPath
+			End If
+		End If
+	Next
+End Sub
+
+Sub setData(document, thisAsm, thisPrt, thisDfn, sTmpPath)
+	document.PartNumber = "MP 2720 " & _
+		String(2 - Len(thisAsm), "0") & thisAsm & _
+		String(2 - Len(thisPrt), "0") & thisPrt
+	document.Definition = "Definition"
 	document.Revision = getDate()
-	'MsgBox TypeName(document)
+	document.DescriptionRef = "True"
+
+	'Error: Object doesn't support this property or method "document.SaveAs"
+	document.ReferenceProduct.Parent.SaveAs(sTmpPath & "\" & document.PartNumber & " " & _
+	document.Definition & " " & document.Revision & "." & thisDfn)
 End Sub
 
 Function getDate()
 	SetLocale "en-us"
 	Dim currDay, currMonth, currYear, mark
-
 	currDay = Day(Date)
 	currMonth = Month(Date)
 	currYear = Year(Date) Mod 100
-
 	getDate = String(2 - Len(currDay), "0") & currDay & "." & _
-			  MonthName(currMonth,true) & "." & currYear
+				 		MonthName(currMonth,true) & "." & currYear
 End Function
+
+Sub clrProp (thisProduct)
+	Set productList = thisProduct.Products
+	For i = 1 To productList.Count
+		productList.Item(i).DescriptionRef = ""
+		clrProp productList.Item(i)
+	Next
+End Sub
