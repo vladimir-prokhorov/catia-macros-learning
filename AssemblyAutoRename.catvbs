@@ -6,19 +6,22 @@
 '===========================================================================
 ' Запланированные доработки:
 '===========================================================================
-' 1.  После внесения изменений нужно подсборки и все входящие детали
-'   сохранить под новым именем, в исходной папке.
-' 2.  Подвязать чертеж к новому файлу модели в автоматическом режиме.
+' 1.  Подвязать чертеж к новому файлу модели в автоматическом режиме.
+' 2.  Проработать возможность удаления или перемещения в архивную папку
+'     предыдущих файлов.
 '===========================================================================
 
 Language = "VBSCRIPT"
 Sub CATMain()
+CATIA.DisplayFileAlerts = False
 Set mainDocument = CATIA.ActiveDocument
 Set rootAssembly = mainDocument.Product
 sTmpPath = CATIA.ActiveDocument.Path
+
 clrProp rootAssembly
 setProp rootAssembly, 0, sTmpPath
 clrProp rootAssembly
+CATIA.DisplayFileAlerts = True
 End Sub
 
 Sub setProp(thisProduct, thisAsm, sTmpPath)
@@ -42,14 +45,15 @@ Sub setProp(thisProduct, thisAsm, sTmpPath)
 End Sub
 
 Sub setData(document, thisAsm, thisPrt, thisDfn, sTmpPath)
-	document.PartNumber = "MP 2720 " & _
+	document.PartNumber = "DP 4230 " & _
 		String(2 - Len(thisAsm), "0") & thisAsm & _
 		String(2 - Len(thisPrt), "0") & thisPrt
 	document.Definition = "Definition"
 	document.Revision = getDate()
 	document.DescriptionRef = "True"
 
-	'Error: Object doesn't support this property or method "document.SaveAs"
+	MsgBox document.ReferenceProduct.Parent.Path
+
 	document.ReferenceProduct.Parent.SaveAs(sTmpPath & "\" & document.PartNumber & " " & _
 	document.Definition & " " & document.Revision & "." & thisDfn)
 End Sub
@@ -61,7 +65,7 @@ Function getDate()
 	currMonth = Month(Date)
 	currYear = Year(Date) Mod 100
 	getDate = String(2 - Len(currDay), "0") & currDay & "." & _
-				 		MonthName(currMonth,true) & "." & currYear
+	 		  MonthName(currMonth,true) & "." & currYear
 End Function
 
 Sub clrProp (thisProduct)
