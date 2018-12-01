@@ -1,0 +1,40 @@
+'================================================================================
+' Создать новую сборку или добавить к существующей сборке подсборки/детали.
+'================================================================================
+' Запланированные доработки:
+'================================================================================
+' 1. Вставить несколько копий одной подсборки/детали.
+'================================================================================
+Sub CATMain()
+	Set documentList = CATIA.documents
+	temp = MsgBox("Would you like to create new document?", 4, "Choose options")
+	If (temp = 6) Then
+		Set mainDocument = documentList.Add("Product")
+	Else
+		Set mainDocument = CATIA.ActiveDocument
+	End If
+	Set rootAssembly = mainDocument.Product
+	addAsm rootAssembly, getRandom(2, 5)
+	addPrt rootAssembly, getRandom(4, 10)
+End Sub
+'================================================================================
+Sub addAsm (document, asm)
+	Set root = document.Products
+	For i = 1 To asm
+		Set newProduct = root.AddNewComponent("Product", "")
+		addPrt newProduct, getRandom(2, 5)
+	Next
+End Sub
+'================================================================================
+Sub addPrt (document, prt)
+	Set root = document.Products
+	For i = 1 To prt
+		Set newProduct = root.AddNewComponent("Part", "")
+	Next
+End Sub
+'================================================================================
+Function getRandom(min, max)
+	Randomize
+	getRandom = (Int((max - min + 1) * Rnd + min))
+End Function
+'================================================================================
