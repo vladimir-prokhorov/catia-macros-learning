@@ -1,29 +1,24 @@
-'===========================================================================
-' Переименовывание файлов в дереве.
-'===========================================================================
-' Замеченные недостатки:
-' 1.  Неверно обрабатывает случай с многоуровневой вложенностью.
-'===========================================================================
+'================================================================================
+' Принудительное переименовывание подсборок и деталей в дереве построения.
+'================================================================================
 ' Запланированные доработки:
-'===========================================================================
-' 1.  Подвязать чертеж к новому файлу модели в автоматическом режиме.
-' 2.  Проработать возможность удаления или перемещения в архивную папку
-'     предыдущих файлов.
-'===========================================================================
-
+'================================================================================
+' 1. Добавить обработчик фантомных сборок, входящим деталям которых будут
+' присваиваться номера родительской сборки.
+'================================================================================
 Language = "VBSCRIPT"
 Sub CATMain()
-CATIA.DisplayFileAlerts = False
-Set mainDocument = CATIA.ActiveDocument
-Set rootAssembly = mainDocument.Product
-sTmpPath = CATIA.ActiveDocument.Path
+	CATIA.DisplayFileAlerts = False
+	Set mainDocument = CATIA.ActiveDocument
+	Set rootAssembly = mainDocument.Product
+	sTmpPath = CATIA.ActiveDocument.Path
 
-clrProp rootAssembly
-setProp rootAssembly, 0, sTmpPath
-clrProp rootAssembly
-CATIA.DisplayFileAlerts = True
+	clrProp rootAssembly
+	setProp rootAssembly, 0, sTmpPath
+	saveDoc rootAssembly
+	CATIA.DisplayFileAlerts = True
 End Sub
-
+'================================================================================
 Sub setProp(thisProduct, thisAsm, sTmpPath)
 	Dim currAsm, currPrt
 	currAsm = thisAsm
@@ -43,21 +38,41 @@ Sub setProp(thisProduct, thisAsm, sTmpPath)
 		End If
 	Next
 End Sub
-
+'================================================================================
 Sub setData(document, thisAsm, thisPrt, thisDfn, sTmpPath)
-	document.PartNumber = "DP 4230 " & _
-		String(2 - Len(thisAsm), "0") & thisAsm & _
-		String(2 - Len(thisPrt), "0") & thisPrt
+	document.PartNumber =	"MP 7230 " & _
+					String(2 - Len(thisAsm), "0") & thisAsm & _
+					String(2 - Len(thisPrt), "0") & thisPrt
 	document.Definition = "Definition"
 	document.Revision = getDate()
 	document.DescriptionRef = "True"
-
-	MsgBox document.ReferenceProduct.Parent.Path
-
-	document.ReferenceProduct.Parent.SaveAs(sTmpPath & "\" & document.PartNumber & " " & _
-	document.Definition & " " & document.Revision & "." & thisDfn)
+	set Ref = document.ReferenceProduct.Parent
+	oldFullPath = Ref.FullName
+	saveToRoot = True 	' Сохранить все файлы в папке основной сборки
+	If (Not saveToRoot) Then sTmpPath = Ref.Path End If
+	newFileName = document.PartNumber & " " & document.Definition & " " & document.Revision & "." & thisDfn
+	Ref.SaveAs(sTmpPath & "\" & newFileName)
+	'===========================================================================
+	' Создаем папку для хранения устаревших данных
+	Set oFileSys = CATIA.FileSystem
+	sObsPath = sTmpPath + "\" + "Obsolete Data"
+	exists = oFileSys.FolderExists(sObsPath)
+	If (Not exists) Then
+		Set FoldObj = oFileSys.CreateFolder(sObsPath)
+	End If
+	'===========================================================================
+	' Выделить имя файла из полного пути
+	oldFileName = Right(oldFullPath, Len(oldFullPath) - InStrRev(oldFullPath, "\"))
+	sNewPath = sObsPath + "\" & oldFileName
+	'===========================================================================
+	' Если старый файл существует, то переместь его в архив
+	If (oFileSys.FileExists(oldFullPath) And oldFileName <> newFileName) Then 
+		oFileSys.CopyFile oldFullPath, sNewPath, False
+		oFileSys.DeleteFile oldFullPath
+	End If
+	'===========================================================================
 End Sub
-
+'================================================================================
 Function getDate()
 	SetLocale "en-us"
 	Dim currDay, currMonth, currYear, mark
@@ -67,7 +82,7 @@ Function getDate()
 	getDate = String(2 - Len(currDay), "0") & currDay & "." & _
 	 		  MonthName(currMonth,true) & "." & currYear
 End Function
-
+'================================================================================
 Sub clrProp (thisProduct)
 	Set productList = thisProduct.Products
 	For i = 1 To productList.Count
@@ -75,3 +90,12 @@ Sub clrProp (thisProduct)
 		clrProp productList.Item(i)
 	Next
 End Sub
+'================================================================================
+Sub saveDoc (thisProduct)
+	thisProduct.ReferenceProduct.Parent.Save()
+	Set productList = thisProduct.Products
+	For i = 1 To productList.Count
+		saveDoc productList.Item(i)
+	Next
+End Sub
+'================================================================================
