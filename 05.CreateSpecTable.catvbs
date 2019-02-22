@@ -1,0 +1,43 @@
+Sub CATMain()
+    '-----------------------
+    ' ACCESS DRAWING
+    '----------------------
+    ' retrieve drawing document infrastructure
+    Set DrwDoc = CATIA.ActiveDocument
+    Set shActiveSheet = DrwDoc.Sheets.ActiveSheet
+    Set vwActiveView = shActiveSheet.Views.ActiveView
+    '------------------
+    ' CREATE TABLE
+    '-----------------
+    ' table position: x, y
+    ' number of rows, number of columns, row height, column width
+    Set tblTable = vwActiveView.Tables.Add(20, 287, 41, 6, 5.9, 29.8)
+    tblTable.Name = "Specification"
+
+	' Do not update drawing table modifications
+    tblTable.ComputeMode = CatTableComputeOFF
+
+ 	' Merge drawing table's cells
+    'tblTable.MergeCells 1, 1, 2, 3
+
+    ' set table caption
+    tblTable.SetCellString 1, 1, "ITEM"
+    tblTable.SetCellString 1, 2, "QTY"
+    tblTable.SetCellString 1, 3, "UNIT"
+    tblTable.SetCellString 1, 4, "DESCRIPTION"
+    tblTable.SetCellString 1, 5, "REFERENCE"
+    tblTable.SetCellString 1, 6, "REMARK"
+
+    tblTable.SetColumnSize  1, 9
+    tblTable.SetColumnSize  2, 9
+    tblTable.SetColumnSize  3, 9
+    tblTable.SetColumnSize  4, 68
+    tblTable.SetColumnSize  5, 45
+    tblTable.SetColumnSize  6, 40
+
+    tblTable.SetCellString 3, 4, "DOCUMENTATION"
+    
+    ' Update drawing table modifications
+    tblTable.ComputeMode = CatTableComputeON
+
+    End Sub 

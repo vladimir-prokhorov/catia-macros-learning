@@ -1,0 +1,247 @@
+Sub CATMain()
+	'-----------------------
+	' ACCESS DRAWING
+	'-----------------------
+	' retrieve drawing document infrastructure
+	Set DrwDoc = CATIA.ActiveDocument
+	Set shActiveSheet = DrwDoc.Sheets.ActiveSheet
+	Set vwActiveView = shActiveSheet.Views.ActiveView
+	'MsgBox shActiveSheet.PaperName
+	'MsgBox shActiveSheet.PaperSize
+	'MsgBox shActiveSheet.Orientation '0 - vertical, 1 - horizontal'
+	'------------------
+	' PAGE PARAMETERS
+	'------------------	
+	pageWidth = shActiveSheet.GetPaperWidth
+	pageHeight = shActiveSheet.GetPaperHeight
+	
+	Set DrwDocument = CATIA.ActiveDocument
+	Set DrwSheets   = DrwDocument.Sheets
+	Set Selection   = DrwDocument.Selection
+	Set DrwSheet    = DrwSheets.ActiveSheet
+	Set DrwView     = DrwSheet.Views.ActiveView
+	Set DrwTexts    = DrwView.Texts
+	Set Fact        = DrwView.Factory2D
+	Set GeomElems   = DrwView.GeometricElements
+
+	leftSpace1 = 15
+	rightSpace1 = 5
+	topSpace1 = 5
+	bottomSpace1 = 5
+
+	leftSpace2 = 20
+	rightSpace2 = 10
+	topSpace2 = 10
+	bottomSpace2 = 10
+
+	A1X = pageWidth - rightSpace1
+	A2X = leftSpace1
+	A1Y = bottomSpace1
+	A2Y = pageHeight - topSpace1
+
+	B1X = pageWidth - rightSpace2
+	B2X = leftSpace2
+	B1Y = bottomSpace2
+	B2Y = pageHeight - topSpace2
+
+	'draw frame outer line
+	Set Line11 = Fact.CreateLine(A1X, A1Y, A2X, A1Y)
+	Line11.Name = "Line11"
+	Set Line12 = Fact.CreateLine(A2X, A1Y, A2X, A2Y)
+	Line12.Name = "Line12"
+	Set Line13 = Fact.CreateLine(A2X, A2Y, A1X, A2Y)
+	Line13.Name = "Line13"
+	Set Line14 = Fact.CreateLine(A1X, A2Y, A1X, A1Y)
+	Line14.Name = "Line14"
+	CATIA.ActiveDocument.Selection.VisProperties.SetRealWidth 1,0.35
+	CATIA.ActiveDocument.Selection.Clear
+ 
+	'draw frame inner line
+	Set Line21 = Fact.CreateLine(B1X, B1Y, B2X, B1Y)
+	Line21.Name = "Line21"
+	Set Line22 = Fact.CreateLine(B2X, B1Y, B2X, B2Y)
+	Line22.Name = "Line22"
+	Set Line23 = Fact.CreateLine(B2X, B2Y, B1X, B2Y)
+	Line23.Name = "Line23"
+	Set Line24 = Fact.CreateLine(B1X, B2Y, B1X, B1Y)
+	Line24.Name = "Line24"
+	CATIA.ActiveDocument.Selection.VisProperties.SetRealWidth 1,0.7
+	CATIA.ActiveDocument.Selection.Clear
+ 
+ 	'draw table
+	Set Line31 = Fact.CreateLine(B1X - 180, B1Y, B1X - 180, B1Y + 45.4)
+	Line31.Name = "Line31"
+	Set Line32 = Fact.CreateLine(B1X - 180, B1Y + 45.4, B1X, B1Y + 45.4)
+	Line32.Name = "Line32"
+	Set Line33 = Fact.CreateLine(B1X - 180, B1Y + 12.8, B1X, B1Y + 12.8)
+	Line33.Name = "Line33"
+	Set Line34 = Fact.CreateLine(B1X - 180, B1Y + 34.8, B1X, B1Y + 34.8)
+	Line34.Name = "Line34"
+	Set Line35 = Fact.CreateLine(B1X - 86, B1Y, B1X - 86, B1Y + 34.8)
+	Line35.Name = "Line35"
+	Set Line36 = Fact.CreateLine(B1X - 138, B1Y + 12.8, B1X - 138, B1Y + 34.8)
+	Line36.Name = "Line36"
+	CATIA.ActiveDocument.Selection.VisProperties.SetRealWidth 1,0.7
+	CATIA.ActiveDocument.Selection.Clear
+
+	'------------------
+	' CREATE TABLE
+	'------------------
+	' table position: x, y, number of rows, number of columns, row Height, column Width
+	Set tblTable = vwActiveView.Tables.Add(B1X, B1Y, 6, 7, 4.4, 10.4)
+	tblTable.AnchorPoint = CatTableBottomRight
+	tblTable.Name = "Main Table"
+	oNbCol = tblTable.NumberOfColumns
+	oNbRow = tblTable.NumberOfRows
+
+	' Do not update drawing table modifications
+	tblTable.ComputeMode = CatTableComputeOFF
+
+	' set table caption
+	tblTable.SetCellString 1, 3, "DATE"
+	tblTable.SetCellString 1, 4, "NAME"
+	tblTable.SetCellString 1, 5, "SIGN"
+	tblTable.SetCellString 1, 6, "Aileron assembly"
+	tblTable.SetCellString 2, 2, "DRAWN"
+	tblTable.SetCellString 2, 3, "15.Jan.19"
+	tblTable.SetCellString 2, 4, "Prokhorov"
+	tblTable.SetCellString 2, 5, "VP"
+	tblTable.SetCellString 3, 2, "CHECKED"
+	tblTable.SetCellString 3, 3, "15.Jan.19"
+	tblTable.SetCellString 3, 4, "Ivanov"
+	tblTable.SetCellString 3, 5, "MI"
+	tblTable.SetCellString 6, 1, "DOCUMENT IS THE PROPERTY OF FLIGHT DESIGN AND MAY NOT BE CITED, REPRODUCED, DISCLOSED OR DISTRIBUTED IN WHOLE OR IN PART WITHOUT PRIOR EXPRESS WRITTEN PERMISSION OF FLIGHT DESIGN"
+	tblTable.SetCellString 6, 6, "DP 5752 0000"
+
+	' Merge drawing table's cells
+	tblTable.MergeCells 1, 1, 5, 1
+	tblTable.MergeCells 1, 6, 5, 2
+	tblTable.MergeCells 6, 1, 1, 5
+	
+	tblTable.SetColumnSize  1, 42.0
+	tblTable.SetColumnSize  2, 12.0
+	tblTable.SetColumnSize  3, 12.0
+	tblTable.SetColumnSize  4, 14.0
+	tblTable.SetColumnSize  5, 14.0
+	tblTable.SetColumnSize  6, 75.0
+	tblTable.SetColumnSize  7, 11.0
+
+	tblTable.SetRowSize  1, 4.26
+	tblTable.SetRowSize  2, 4.26
+	tblTable.SetRowSize  3, 4.26
+	tblTable.SetRowSize  4, 4.26
+	tblTable.SetRowSize  5, 4.26
+	tblTable.SetRowSize  6, 12.8
+
+	iFontSize = 1.8
+	For i = 1 To oNbRow
+		For j = 1 To oNbCol
+			Set MyText = tblTable.GetCellObject(i, j)
+			MyText.SetFontSize 0, 0, iFontSize
+			MyText.SetParameterOnSubString catAlignment, 0, 0, catCenter
+		Next
+	Next
+
+	tblTable.GetCellObject(1, 6).SetFontSize 0, 0, 5.0
+	tblTable.GetCellObject(6, 6).SetFontSize 0, 0, 5.0
+
+	Set MyDrawingPicture1 = vwActiveView.Pictures.Add("\PIC\FD.bmp", pageWidth - 183.5, 24)
+
+ 	' Update drawing table modifications
+	tblTable.ComputeMode = CatTableComputeON
+
+	'------------------
+	' CREATE TABLE
+	'------------------
+	' table position: x, y, number of rows, number of columns, row Height, column Width
+	Set tblTable = vwActiveView.Tables.Add(B1X, B2Y, 2, 8, 4.4, 15)
+	tblTable.AnchorPoint = CatTableTopRight
+	tblTable.Name = "Revision Table"
+	oNbCol = tblTable.NumberOfColumns
+	oNbRow = tblTable.NumberOfRows
+
+	' Do not update drawing table modifications
+	tblTable.ComputeMode = CatTableComputeOFF
+
+	' set table caption
+	tblTable.SetCellString 1, 1, "REV"
+	tblTable.SetCellString 1, 2, "CDM"
+	tblTable.SetCellString 1, 3, "ECN"
+	tblTable.SetCellString 1, 4, "FIRST S/N"
+	tblTable.SetCellString 1, 5, "CHANGE"
+	tblTable.SetCellString 1, 6, "DRAWN"
+	tblTable.SetCellString 1, 7, "CHECKED"
+	tblTable.SetCellString 1, 8, "DATE"
+
+	tblTable.SetColumnSize  1, 8.0
+	tblTable.SetColumnSize  2, 15.0
+	tblTable.SetColumnSize  3, 8.0
+	tblTable.SetColumnSize  4, 15.0
+	tblTable.SetColumnSize  5, 98.0
+	tblTable.SetColumnSize  6, 12.0
+	tblTable.SetColumnSize  7, 12.0
+	tblTable.SetColumnSize  8, 12.0
+
+	iFontSize = 1.8
+	For i = 1 To oNbRow
+		For j = 1 To oNbCol
+			Set MyText = tblTable.GetCellObject(i, j)
+			MyText.SetFontSize 0, 0, iFontSize
+			MyText.SetParameterOnSubString catAlignment, 0, 0, catCenter
+		Next
+	Next
+
+ 	' Update drawing table modifications
+	tblTable.ComputeMode = CatTableComputeON
+
+	'------------------
+	' CREATE TABLE
+	'------------------
+	' table position: x, y, number of rows, number of columns, row Height, column Width
+	Set tblTable = vwActiveView.Tables.Add(B1X, B1Y + 45.4, 2, 9, 4.4, 15)
+	tblTable.AnchorPoint = CatTableTopRight
+	tblTable.Name = "Revision Table"
+	oNbCol = tblTable.NumberOfColumns
+	oNbRow = tblTable.NumberOfRows
+
+	' Do not update drawing table modifications
+	tblTable.ComputeMode = CatTableComputeOFF
+
+	tblTable.MergeCells 1, 5, 1, 2
+
+
+	' set table caption
+	tblTable.SetCellString 1, 1, "SCALE"
+	tblTable.SetCellString 1, 3, "WEIGHT(kg)"
+	tblTable.SetCellString 1, 5, "TOLERANCES UNLESS OTHERWISE SPECIFIED"
+	tblTable.SetCellString 1, 7, "MATERIAL"
+	tblTable.SetCellString 1, 8, "MATERIAL ART№"
+	tblTable.SetCellString 1, 9, "APPLICATION RATE"
+
+	Set drwText = tblTable.GetCellObject(1, 1)
+	drwText.SetParameterOnsubString catCharSpacing,0,0,25 
+	drwText.SetParameterOnsubString catCharRatio,0,0,55 
+	tblTable.SetRowSize  2, 6.2
+
+	tblTable.SetColumnSize  1, 8.5
+	tblTable.SetColumnSize  2, 16.3
+	tblTable.SetColumnSize  3, 12.0
+	tblTable.SetColumnSize  4, 17.0
+	tblTable.SetColumnSize  5, 24.85
+	tblTable.SetColumnSize  6, 24.85
+	tblTable.SetColumnSize  7, 39.0
+	tblTable.SetColumnSize  8, 17.5
+	tblTable.SetColumnSize  9, 20.0
+
+	iFontSize = 1.7
+	For i = 1 To oNbRow
+		For j = 1 To oNbCol
+			Set MyText = tblTable.GetCellObject(i, j)
+			MyText.SetFontSize 0, 0, iFontSize
+			MyText.SetParameterOnSubString catAlignment, 0, 0, catCenter
+		Next
+	Next
+
+ 	' Update drawing table modifications
+	tblTable.ComputeMode = CatTableComputeON
+End Sub 

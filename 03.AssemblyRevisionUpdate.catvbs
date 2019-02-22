@@ -1,0 +1,90 @@
+'================================================================================
+' Поиск сборок и деталей в которые были внесены изменения и обновить дату ревизии.
+'================================================================================
+' Запланированные доработки:
+'================================================================================
+' 1.  Подвязать чертеж к новому файлу модели в автоматическом режиме.
+'================================================================================
+Language = "VBSCRIPT"
+Sub CATMain()
+	CATIA.DisplayFileAlerts = False
+	Set mainDocument = CATIA.ActiveDocument
+	Set rootAssembly = mainDocument.Product
+	' Первый раз отрабатываются детали подсборки, для того что-бы изменилась ревизия
+	' у подсборок, нужно запускать цикл повторно и еще раз для основной сборки.
+	setProp rootAssembly
+	setProp rootAssembly
+	setProp rootAssembly
+	CATIA.DisplayFileAlerts = True
+End Sub
+'================================================================================
+Sub setProp(thisProduct)
+	Set productList = thisProduct.Products
+	hasChanged = Not thisProduct.ReferenceProduct.Parent.Saved
+	' Если документ изменен, обновить дату и сохранить под новым именем
+	If (hasChanged) Then
+		setData thisProduct
+	End If
+	For i = 1 To productList.Count
+		setProp productList.Item(i)
+	Next
+End Sub
+'================================================================================
+Sub setData(document)
+	set Ref = document.ReferenceProduct.Parent
+	rootFullPath = CATIA.ActiveDocument.FullName
+	rootAsmFolder = CATIA.ActiveDocument.Path
+	'===========================================================================
+	' Выделить имя файла из полного пути
+	oldFullPath = Ref.FullName
+	oldFileFolder = Ref.Path
+	oldFileName = Right(oldFullPath, Len(oldFullPath) - InStrRev(oldFullPath, "\"))
+	fileType = Right(oldFullPath, Len(oldFullPath) - InStrRev(oldFullPath, "."))
+	document.Revision = getDate()
+	document.Definition = "Document Was Changed!"
+	newFileName = document.PartNumber & " " & document.Definition & " " & document.Revision & "." & fileType
+	'===========================================================================
+	' Создаем папку для хранения устаревших данных
+	Set oFileSys = CATIA.FileSystem
+	sObsPath = oldFileFolder + "\" + "Obsolete Data"
+	resFullPath = sObsPath + "\" & oldFileName
+	exists = oFileSys.FolderExists(sObsPath)
+	If (Not exists) Then
+		Set FoldObj = oFileSys.CreateFolder(sObsPath)
+	End If
+	'===========================================================================
+	flag = true
+	If (flag) Then
+		MsgBox 	String(Len(resFullPath) + 20, "_") & Chr(10) & Chr(10) & _
+				"Папка основной сборки: " & rootAsmFolder & Chr(10) & Chr(10) & _
+				"Полный путь основной сборке: " & rootFullPath & Chr(10) & _
+				String(Len(resFullPath) + 20, "_") & Chr(10) & Chr(10) & _
+				"Путь к папке текущего файла: " & oldFileFolder & Chr(10) & Chr(10) & _
+				"Полный путь к текущему файлу: " & oldFullPath & Chr(10) & Chr(10) & _
+				"Папка для резервных копий: " & resFullPath & Chr(10) & _
+				String(Len(resFullPath) + 20, "_") & Chr(10) & Chr(10) & _
+				"Старое имя текущего файла: " & oldFileName & Chr(10) & Chr(10) & _
+				"Новое имя текщего файла: " & newFileName & Chr(10) & Chr(10) & _
+				"Тип текущего файла: " & fileType & Chr(10) & _
+				String(Len(resFullPath) + 20, "_"), 0, oldFileName
+	End If
+	Ref.SaveAs(oldFileFolder & "\" & newFileName)
+	'===========================================================================
+	' Если старый файл существует, то переместь его в архив
+	If (oFileSys.FileExists(oldFullPath) And oldFileName <> newFileName) Then
+		oFileSys.CopyFile oldFullPath, resFullPath, False
+		oFileSys.DeleteFile oldFullPath
+	End If
+	'===========================================================================
+End Sub
+'================================================================================
+Function getDate()
+	SetLocale "en-us"
+	Dim currDay, currMonth, currYear, mark
+	currDay = Day(Date)
+	currMonth = Month(Date)
+	currYear = Year(Date) Mod 100
+	getDate = String(2 - Len(currDay), "0") & currDay & "." & _
+	 		  MonthName(currMonth,true) & "." & currYear
+End Function
+'================================================================================
